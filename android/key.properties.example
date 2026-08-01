@@ -1,4 +1,17 @@
+# Copy to key.properties and fill in. Never commit key.properties itself
+# (it is gitignored) or the .jks keystore it points at.
+#
+# storeFile is resolved relative to the android/ directory, so a keystore at
+# android/app/upload-keystore.jks is written as app/upload-keystore.jks below.
+# This matches what .github/workflows/build_apk.yml generates in CI.
+#
+# Generate a keystore with:
+#   keytool -genkeypair -v -keystore android/app/upload-keystore.jks \
+#     -alias upload -keyalg RSA -keysize 2048 -validity 10000
+#
+# Note: PKCS12 keystores (the modern default) ignore a key password that
+# differs from the store password, so keep both values identical.
 storePassword=YOUR_STORE_PASSWORD
-keyPassword=YOUR_KEY_PASSWORD
+keyPassword=YOUR_STORE_PASSWORD
 keyAlias=YOUR_KEY_ALIAS
-storeFile=upload-keystore.jks
+storeFile=app/upload-keystore.jks
