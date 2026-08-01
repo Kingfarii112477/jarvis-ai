@@ -45,7 +45,11 @@ dependencies:
   flutter_highlight: ^0.7.0
 
   # Files & content
-  file_picker: ^11.0.3
+  # Pinned to 10.x deliberately: 8.x/9.x/10.0 hardcode compileSdk 34 (conflicts
+  # with flutter_plugin_android_lifecycle's 36+ requirement), while 11.x drops
+  # its own Kotlin plugin and requires android.builtInKotlin=true — which the
+  # other 8 Kotlin plugins in this app cannot tolerate under AGP 9.
+  file_picker: ^10.3.3
   share_plus: ^10.0.0
 
   # Notifications

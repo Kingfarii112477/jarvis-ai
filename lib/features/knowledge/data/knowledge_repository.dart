@@ -31,7 +31,7 @@ class KnowledgeRepository {
   /// Opens the system file picker, copies the chosen file into app
   /// storage (so it survives the source being deleted), and indexes it.
   Future<KnowledgeDocument?> pickAndImport() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'md', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'mp3', 'wav', 'mp4'],
     );
