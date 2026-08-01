@@ -45,7 +45,7 @@ dependencies:
   flutter_highlight: ^0.7.0
 
   # Files & content
-  file_picker: ^8.0.6
+  file_picker: ^11.0.3
   share_plus: ^10.0.0
 
   # Notifications
