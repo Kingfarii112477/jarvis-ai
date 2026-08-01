@@ -29,10 +29,12 @@ android {
 
     defaultConfig {
         applicationId "com.manus.jarvis"
-        minSdk 21
+        // 23+ is required by flutter_secure_storage's EncryptedSharedPreferences
+        // and by local_auth's BiometricPrompt-based biometric lock.
+        minSdk 23
         targetSdk 36
-        versionCode 1
-        versionName "1.0.0"
+        versionCode flutter.versionCode
+        versionName flutter.versionName
     }
 
     signingConfigs {
