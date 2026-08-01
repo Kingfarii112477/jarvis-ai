@@ -10,6 +10,7 @@ import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/section_header.dart';
+import '../../voice/data/jarvis_tts.dart';
 import '../data/settings_repository.dart';
 import 'settings_providers.dart';
 
@@ -175,6 +176,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   value: settings.continuousListening,
                   onChanged: notifier.setContinuousListening,
                 ),
+                const Divider(height: AppSpacing.lg),
+                const _VoicePicker(),
               ],
             ),
           ),
@@ -328,6 +331,82 @@ class _BiometricLockRowState extends State<_BiometricLockRow> {
         await widget.secureStorage.setBiometricLockEnabled(v);
         if (mounted) setState(() => _enabled = v);
       },
+    );
+  }
+}
+
+/// Lets the user audition and pick among the English voices the device's
+/// TTS engine actually has installed. Stock Samsung/Huawei engines sound
+/// noticeably synthetic; installing Google Speech Services and its UK
+/// English voice data makes a large difference, so that's called out here
+/// rather than left for the user to discover.
+class _VoicePicker extends ConsumerStatefulWidget {
+  const _VoicePicker();
+
+  @override
+  ConsumerState<_VoicePicker> createState() => _VoicePickerState();
+}
+
+class _VoicePickerState extends ConsumerState<_VoicePicker> {
+  List<String>? _voices;
+  String? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final names = await ref.read(jarvisTtsProvider).availableVoiceNames();
+      if (mounted) setState(() => _voices = names);
+    } catch (_) {
+      if (mounted) setState(() => _voices = const []);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final voices = _voices;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Assistant voice', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 4),
+        Text(
+          voices == null
+              ? 'Reading installed voices…'
+              : voices.isEmpty
+                  ? 'No English voices installed. Install Google Speech Services, then Android Settings → Accessibility → Text-to-speech → set Google as the engine and download UK English.'
+                  : 'A UK English male voice (en-gb-x-gbb) is chosen automatically when available.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (voices != null && voices.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          DropdownButtonFormField<String>(
+            initialValue: _selected,
+            isExpanded: true,
+            hint: const Text('Automatic (best match)', style: TextStyle(fontSize: 13)),
+            dropdownColor: AppColors.cardElevated,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+            items: [
+              for (final name in voices)
+                DropdownMenuItem(
+                  value: name,
+                  child: Text(name, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (name) async {
+              if (name == null) return;
+              setState(() => _selected = name);
+              final tts = ref.read(jarvisTtsProvider);
+              await tts.setVoiceByName(name);
+              await tts.speak('Voice set. All systems operational.');
+            },
+          ),
+        ],
+      ],
     );
   }
 }

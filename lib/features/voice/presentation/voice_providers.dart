@@ -13,10 +13,9 @@ import '../../chat/data/chat_repository.dart';
 import '../../chat/domain/chat_message.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../settings/presentation/settings_providers.dart';
-import '../data/audio_player_service.dart';
+import '../data/jarvis_tts.dart';
 import '../data/record_service.dart';
 import '../data/speech_to_text_service.dart';
-import '../data/tts_service.dart';
 import 'package:uuid/uuid.dart';
 
 const _voiceSessionTitle = 'Voice Assistant';
@@ -79,8 +78,7 @@ class VoiceController extends StateNotifier<VoiceState> {
 
   RecordService get _record => _ref.read(recordServiceProvider);
   SpeechToTextService get _stt => _ref.read(speechToTextServiceProvider);
-  TtsService get _tts => _ref.read(ttsServiceProvider);
-  AudioPlayerService get _player => _ref.read(audioPlayerServiceProvider);
+  JarvisTts get _tts => _ref.read(jarvisTtsProvider);
   ApiClient get _api => _ref.read(apiClientProvider);
   ChatRepository get _chatRepo => _ref.read(chatRepositoryProvider);
   SecureStorageService get _secureStorage => _ref.read(secureStorageProvider);
@@ -92,9 +90,19 @@ class VoiceController extends StateNotifier<VoiceState> {
     } catch (e) {
       state = state.copyWith(error: describeException(e is Exception ? e : UnknownException(e.toString())));
     }
-    _tts.onStart(() => state = state.copyWith(mood: AssistantMood.speaking));
-    _tts.onComplete(() => state = state.copyWith(mood: AssistantMood.idle, clearAmplitude: true));
-    _tts.onCancel(() => state = state.copyWith(mood: AssistantMood.idle, clearAmplitude: true));
+    // The orb's SPEAKING state is driven by the TTS engine's own callbacks
+    // (surfaced as this ValueNotifier) rather than by guessing at timing
+    // around the speak() call, so it stays in sync if speech is cut short.
+    _tts.isSpeaking.addListener(_onSpeakingChanged);
+  }
+
+  void _onSpeakingChanged() {
+    if (!mounted) return;
+    if (_tts.isSpeaking.value) {
+      state = state.copyWith(mood: AssistantMood.speaking, clearAmplitude: true);
+    } else if (state.mood == AssistantMood.speaking) {
+      state = state.copyWith(mood: AssistantMood.idle, clearAmplitude: true);
+    }
   }
 
   Future<String> _ensureVoiceChatId() async {
@@ -107,6 +115,8 @@ class VoiceController extends StateNotifier<VoiceState> {
 
   Future<void> startPushToTalk() async {
     try {
+      // Barge-in: pressing the mic cuts JARVIS off mid-sentence.
+      await _tts.stop();
       await _record.start();
       state = state.copyWith(mood: AssistantMood.listening, isListening: true, liveTranscript: '', clearError: true);
       await _amplitudeSub?.cancel();
@@ -170,13 +180,11 @@ class VoiceController extends StateNotifier<VoiceState> {
           timestamp: DateTime.now(),
           isVoice: true,
         ));
-        state = state.copyWith(lastReply: response.text, mood: AssistantMood.speaking);
-        if (response.audioBase64 != null && response.audioBase64!.isNotEmpty) {
-          await _player.playBase64(response.audioBase64!);
-          state = state.copyWith(mood: AssistantMood.idle);
-        } else {
-          await _tts.speak(response.text);
-        }
+        state = state.copyWith(lastReply: response.text);
+        // Speech is always synthesized on-device now. Any `audio_base64` the
+        // backend still returns is deliberately ignored, so the app no longer
+        // depends on a remote TTS service (or its tunnel) being reachable.
+        await _tts.speak(response.text);
       },
       err: (error) async {
         state = state.copyWith(mood: AssistantMood.error, error: describeException(error));
@@ -204,6 +212,7 @@ class VoiceController extends StateNotifier<VoiceState> {
   @override
   void dispose() {
     _amplitudeSub?.cancel();
+    _tts.isSpeaking.removeListener(_onSpeakingChanged);
     super.dispose();
   }
 }

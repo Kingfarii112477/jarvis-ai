@@ -1,7 +1,7 @@
 name: jarvis_app
 description: "JARVIS AI — a premium, production-grade AI assistant for Android built with Flutter."
 publish_to: 'none'
-version: 2.0.0+1
+version: 2.1.0+2
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -31,9 +31,8 @@ dependencies:
 
   # Voice
   record: ^6.0.0
-  just_audio: ^0.9.38
   speech_to_text: ^7.0.0
-  flutter_tts: ^4.1.0
+  flutter_tts: ^4.2.0
   permission_handler: ^11.3.1
 
   # UI / design system

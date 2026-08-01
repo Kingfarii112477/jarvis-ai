@@ -13,6 +13,7 @@ import 'core/storage/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/app_logger.dart';
 import 'features/settings/presentation/settings_providers.dart';
+import 'features/voice/data/jarvis_tts.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
@@ -32,6 +33,15 @@ Future<void> main() async {
     final notificationService = NotificationService();
     await notificationService.init();
     await notificationService.requestPermission();
+
+    // On-device speech, warmed up before first frame so the first reply
+    // doesn't pay for engine + voice-list initialization. Guarded: a device
+    // with a broken or missing TTS engine must not prevent the app starting.
+    try {
+      await JarvisTts.instance.init();
+    } catch (e, st) {
+      AppLogger.error('Text-to-speech unavailable; continuing without it', e, st);
+    }
 
     runApp(
       ProviderScope(
