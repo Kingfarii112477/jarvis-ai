@@ -17,6 +17,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+        // Required by flutter_local_notifications' use of java.time APIs
+        // on API levels below 26.
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -29,9 +32,11 @@ android {
 
     defaultConfig {
         applicationId "com.manus.jarvis"
-        // 23+ is required by flutter_secure_storage's EncryptedSharedPreferences
-        // and by local_auth's BiometricPrompt-based biometric lock.
-        minSdk 23
+        // flutter.minSdkVersion is Flutter's computed max() of our own
+        // requirement and every plugin's declared minSdk — local_auth's
+        // BiometricPrompt and flutter_secure_storage's
+        // EncryptedSharedPreferences both need 23+, so it resolves to 23.
+        minSdkVersion flutter.minSdkVersion
         targetSdk 36
         versionCode flutter.versionCode
         versionName flutter.versionName
@@ -62,4 +67,6 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+}
