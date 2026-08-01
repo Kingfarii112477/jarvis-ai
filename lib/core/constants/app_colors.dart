@@ -39,15 +39,6 @@ class AppColors {
     secondaryGlow,
     accent,
   ];
-
-  static RadialGradient glowRadial(Color color, {double opacity = 0.35}) {
-    return RadialGradient(
-      colors: [
-        color.withValues(alpha: opacity),
-        color.withValues(alpha: 0),
-      ],
-    );
-  }
 }
 
 /// Maps each orb / assistant lifecycle state to a color so painters, chips
