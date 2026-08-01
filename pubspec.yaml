@@ -88,5 +88,8 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
+  # assets/images/ is deliberately NOT bundled. Those PNGs are build-time
+  # inputs for flutter_launcher_icons (read from their source paths above),
+  # never loaded at runtime — no Image.asset/AssetImage references them.
+  # Listing them here shipped 7.6 MB of dead weight in every APK.
+  # Re-add an `assets:` section here if a real runtime asset is introduced.
